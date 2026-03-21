@@ -1,9 +1,10 @@
 import express from 'express';
-import axios from 'axios';
+// import axios from 'axios';
+import { parseSearchQuery } from '../services/parserService.js';
 
 const router = express.Router();
 
-// Mock endpoint for property search or AI Agent trigger
+// Endpoint for property search via natural language
 router.post('/search', async (req, res) => {
   const { query } = req.body;
   
@@ -12,24 +13,23 @@ router.post('/search', async (req, res) => {
   }
 
   try {
-    // Here we would integrate with TinyFish API or other AI backends
-    console.log(`Received search query: ${query}`);
+    console.log(`Received natural language search query: "${query}"`);
     
-    // Simulating API processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Parse using Claude API
+    const parsedData = await parseSearchQuery(query);
+    console.log("Structured JSON extracted:", parsedData);
     
-    // Simulate a successful response
+    // Simulating further backend processing or API integration with parsed data...
+    
+    // Return the parsed structured JSON to the frontend
     res.json({
       success: true,
-      message: `AI Agent started processing query: "${query}"`,
-      data: {
-        agentJobId: 'job_' + Date.now(),
-        status: 'processing'
-      }
+      message: `Successfully parsed query into structured data.`,
+      data: parsedData
     });
   } catch (error) {
     console.error('Error processing search:', error);
-    res.status(500).json({ error: 'Internal server error while processing search' });
+    res.status(500).json({ error: 'Failed to process natural language query.', details: error.message });
   }
 });
 

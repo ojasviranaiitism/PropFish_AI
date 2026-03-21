@@ -5,6 +5,7 @@ dotenv.config();
 /**
  * Parses a natural language search query into structured JSON using OpenRouter.
  */
+//! find me a 2bhk room to rent under 12000 rupees per month in Greater Noida Sector Beta 2 near Schools
 export async function parseSearchQuery(query) {
   const prompt = `
 You are an expert real estate data extraction API.
@@ -25,7 +26,7 @@ Schema:
 Rules:
 - Convert 50L → 5000000, 1Cr → 10000000
 - If a field is missing, omit it
-
+- It should also find properties that can be rented or bought based on query
 - Always infer "country" from city/state if not provided
   (e.g., Bangalore → India, New York → USA)
 

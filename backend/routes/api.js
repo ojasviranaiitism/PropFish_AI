@@ -73,7 +73,7 @@ router.get('/search-stream', async (req, res) => {
   }
 
   // 🔥 SSE headers
-  res.setHeader("Access-Control-Allow-Origin", "https://prop-fish-ai-client.vercel.app");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");

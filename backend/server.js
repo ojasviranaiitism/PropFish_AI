@@ -10,9 +10,7 @@ const PORT = process.env.PORT || 5000;
 
 // ✅ CORS (global)
 app.use(cors({
-  origin: "https://prop-fish-ai-client.vercel.app",
-  methods: ["GET", "POST"],
-  credentials: true
+  origin: "*"
 }));
 
 app.use(express.json());

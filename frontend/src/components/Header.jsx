@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useClerk, useUser, UserButton } from '@clerk/react';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const { openSignIn, openSignUp } = useClerk();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,75 +76,87 @@ export default function Header() {
 
                   {/* Mobile buttons */}
                   <div className="desktop-hidden flex items-center gap-2">
+                    {isSignedIn ? (
+                      <UserButton afterSignOutUrl="/" />
+                    ) : (
+                      <>
+                        <a
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); openSignIn(); }}
+                          className="button w-inline-block"
+                          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)' }}
+                        >
+                          <div className="button-text-wrap">
+                            <div className="button-text-switch">
+                              <div className="button-text first-text">Login</div>
+                              <div className="button-text second-text">Login</div>
+                            </div>
+                          </div>
+                          <div className="button-bg"></div>
+                        </a>
+                        <a
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); openSignUp(); }}
+                          data-wf--button--variant="base"
+                          className="button w-inline-block"
+                        >
+                          <div className="button-text-wrap">
+                            <div className="button-text-switch">
+                              <div className="button-text first-text">Sign Up</div>
+                              <div className="button-text second-text">Sign Up</div>
+                            </div>
+                          </div>
+                          <div className="button-bg"></div>
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </nav>
+
+              {/* Desktop buttons — Login + Sign Up (unauthenticated) or UserButton (authenticated) */}
+              <div className="nav-btn-inner flex items-center gap-3">
+                {isSignedIn ? (
+                  <UserButton afterSignOutUrl="/" />
+                ) : (
+                  <>
+                    {/* Login — ghost style */}
                     <a
                       href="#"
-                      onClick={(e) => e.preventDefault()}
-                      className="button w-inline-block"
-                      style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.25)' }}
+                      onClick={(e) => { e.preventDefault(); openSignIn(); }}
+                      className="button w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e w-inline-block"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.25)',
+                        color: 'white'
+                      }}
                     >
-                      <div className="button-text-wrap">
+                      <div className="button-text-wrap w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e">
                         <div className="button-text-switch">
                           <div className="button-text first-text">Login</div>
                           <div className="button-text second-text">Login</div>
                         </div>
                       </div>
-                      <div className="button-bg"></div>
+                      <div className="button-bg w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e"></div>
                     </a>
+
+                    {/* Sign Up */}
                     <a
                       href="#"
-                      onClick={(e) => e.preventDefault()}
-                      data-wf--button--variant="base"
-                      className="button w-inline-block"
+                      onClick={(e) => { e.preventDefault(); openSignUp(); }}
+                      data-wf--button--variant="style-three"
+                      className="button w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e w-inline-block"
                     >
-                      <div className="button-text-wrap">
+                      <div className="button-text-wrap w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e">
                         <div className="button-text-switch">
                           <div className="button-text first-text">Sign Up</div>
                           <div className="button-text second-text">Sign Up</div>
                         </div>
                       </div>
-                      <div className="button-bg"></div>
+                      <div className="button-bg w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e"></div>
                     </a>
-                  </div>
-                </div>
-              </nav>
-
-              {/* Desktop buttons — Login + Sign Up side by side */}
-              <div className="nav-btn-inner flex items-center gap-3">
-                {/* Login — ghost style matching Sign Up shape */}
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="button w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e w-inline-block"
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                    color: 'white'
-                  }}
-                >
-                  <div className="button-text-wrap w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e">
-                    <div className="button-text-switch">
-                      <div className="button-text first-text">Login</div>
-                      <div className="button-text second-text">Login</div>
-                    </div>
-                  </div>
-                  <div className="button-bg w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e"></div>
-                </a>
-
-                {/* Sign Up */}
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  data-wf--button--variant="style-three"
-                  className="button w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e w-inline-block"
-                >
-                  <div className="button-text-wrap w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e">
-                    <div className="button-text-switch">
-                      <div className="button-text first-text">Sign Up</div>
-                      <div className="button-text second-text">Sign Up</div>
-                    </div>
-                  </div>
-                  <div className="button-bg w-variant-b0fff8c7-2f2a-2b98-9255-dbe5a5319f5e"></div>
-                </a>
+                  </>
+                )}
               </div>
               <div className="hamburger-trigger-wrap">
                 <div className="hamburger-trigger w-nav-button">

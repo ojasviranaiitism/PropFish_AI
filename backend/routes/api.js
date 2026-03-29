@@ -85,6 +85,7 @@ router.get('/search-stream', async (req, res) => {
 
     // 1️⃣ Parse
     const parsedData = await parseSearchQuery(query);
+    
 
     // 2️⃣ Websites
     const websites = parsedData.recommended_websites?.slice(0, 2);

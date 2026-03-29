@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useClerk, useUser } from '@clerk/react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import AgentActivity from './components/AgentActivity';
@@ -15,6 +16,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState(null);
   const [tinyfishResults, setTinyfishResults] = useState([]);
   const agentSectionRef = useRef(null);
+  const { openSignIn } = useClerk();
+  const { isSignedIn } = useUser();
 
   /**
    * 🔥 Webflow re-init (unchanged)
@@ -35,6 +38,12 @@ function App() {
    * 🔥 HANDLE SEARCH (SSE ONLY — NO POST)
    */
   const handleSearch = (query) => {
+    // 🔒 Guard: require login before searching
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
+
     console.log("🔍 Searching for:", query);
 
     // Reset all results so old sections disappear immediately

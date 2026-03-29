@@ -1,13 +1,52 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>temp-app</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropFish AI</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    WebFont.load({ google: { families: ["Geist Mono:300,400,500,600,700","Inter:300,400,500,600,700"] } });
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.20/dist/lenis.css">
+  <style>
+    html.w-mod-js:not(.w-mod-ix3) :is(.section-label-icon, .section-label-text, [title-anim="true"], [fade-up="true"], [marquee-slide-left="true"], [marquee-slide-right="true"], [scroll-to-text-color="true"], [text-anim="true"], [fade="true"], [group-fade-up-item="true"]) {
+      visibility: hidden !important;
+    }
+    .w-nav-overlay { z-index: 1000; } 
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script src="/js/jquery.js" type="text/javascript"></script>
+  <script src="/js/webflow.schunk.e0c428ff9737f919.js" type="text/javascript"></script>
+  <script src="/js/webflow.schunk.7afa19fd4a69c67d.js" type="text/javascript"></script>
+  <script src="/js/webflow-script.js" type="text/javascript"></script>
+  <script src="/js/gsap.min.js" type="text/javascript"></script>
+  <script src="/js/scrolltrigger.min.js" type="text/javascript"></script>
+  <script src="/js/splittext.min.js" type="text/javascript"></script>
+  <script src="/js/scrolltoplugin.min.js" type="text/javascript"></script>
+  <script type="text/javascript">gsap.registerPlugin(ScrollTrigger,SplitText,ScrollToPlugin);</script>
+  <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+  <script>
+    const lenis = new Lenis({
+        smooth: true,
+        lerp: 0.1,
+        wheelMultiplier: 1,
+        infinite: false
+      });
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+  </script>
+</body>
+
 </html>

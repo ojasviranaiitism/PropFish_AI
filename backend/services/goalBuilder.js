@@ -1,20 +1,46 @@
 export function buildTinyFishGoal(data) {
-    return `
-Search for ${data.bedrooms || ""} BHK properties in ${data.city}, ${data.country}
-under ₹${data.max_price}.
+  const intent = data.transaction_type === "rent" ? "rent" : "buy";
 
-Preferences: ${data.preferences?.join(", ") || "None"}
+  const location = data.location || "target city";
+  const currency = data.currency || "₹";
+  const budget = data.max_price ? `${currency}${data.max_price}` : "any";
 
-Steps:
-1. Apply filters for price and bedrooms
-2. Open top listings
-3. Extract:
-   - price
-   - location
-   - area
-   - bedrooms
-   - URL
+  return `
+Search ${intent} properties in ${location}.
 
-Return 3-5 results in structured format.
+Apply filters:
+- Bedrooms: ${data.bedrooms || "any"}
+- Bathrooms: ${data.bathrooms || "any"}
+- Budget: ${budget}
+
+Open top 3 listings.
+
+For each listing, open the property detail page and extract the following:
+- price
+- address (the full street address explicitly listed in the 'More Details' or 'Address' field on the property page, e.g. "Ats chowk noida extension., Noida Extension, Greater Noida, Delhi NCR")
+- location (general area/neighbourhood)
+- area
+- bedrooms
+- property type
+- URL
+- image_url
+- key_features (extract 2-3 attractive amenities or nearby landmarks like hospital, metro, mall, or grocery store that are visible on the listing card)
+
+Return EXACTLY the following JSON format. Do not include markdown formatting or any other text structure.
+{
+  "listings": [
+    {
+      "price": "string",
+      "address": "string",
+      "location": "string",
+      "area": "string",
+      "bedrooms": "string",
+      "property_type": "string",
+      "url": "string",
+      "image_url": "string",
+      "key_features": ["string", "string"]
+    }
+  ]
+}
 `;
 }

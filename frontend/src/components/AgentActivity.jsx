@@ -1,74 +1,249 @@
-const activities = [
-  {
-    id: 1,
-    text: "Scanning listings...",
-    icon: (
-      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    ),
-    progress: "w-1/3",
-    isActive: false,
-  },
-  {
-    id: 2,
-    text: "Analyzing neighborhoods...",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-      </svg>
-    ),
-    progress: "w-1/4",
-    isActive: true,
-  },
-  {
-    id: 3,
-    text: "Filtering properties...",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-      </svg>
-    ),
-    progress: "w-3/4",
-    isActive: false,
-  }
-];
+import { useEffect, useState, useRef } from "react";
 
-export default function AgentActivity() {
+export default function AgentActivity({ query }) {
+  const [tasks, setTasks] = useState({});
+  const [isActive, setIsActive] = useState(false);
+  const logsEndRefs = useRef({});
+
+  useEffect(() => {
+    if (!query) return;
+
+    setIsActive(true);
+    setTasks({}); // ✅ no fake "initializing" card
+
+    logsEndRefs.current = {};
+
+    const eventSource = new EventSource(
+      `http://localhost:5000/api/search-stream?q=${encodeURIComponent(query)}`
+    );
+
+    eventSource.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (data.type === "PING") return;
+
+      // ✅ FINAL RESULT
+      if (data.type === "FINAL") {
+        console.log("✅ FINAL RESULTS:", data.results);
+
+        // 🔥 send results to App.jsx
+        window.dispatchEvent(
+          new CustomEvent("tinyfish-results", { detail: data.results })
+        );
+
+        setIsActive(false);
+        eventSource.close();
+        return;
+      }
+
+      // 🏆 Recommendation event — signal App.jsx to show refining banner
+      if (data.type === "RECOMMENDATION") {
+        window.dispatchEvent(new CustomEvent("tinyfish-refining"));
+        return;
+      }
+
+      // ✅ global error
+      if (data.status === "error" && !data.site) {
+        setIsActive(false);
+        eventSource.close();
+        return;
+      }
+
+      // ❌ ignore non-site events
+      if (!data.site) return;
+
+      setTasks((prev) => {
+        const siteData = prev[data.site] || {
+          logs: [],
+          streaming_url: null,
+          status: "pending",
+        };
+
+        let newLogs = [...siteData.logs];
+
+        if (data.message) {
+          newLogs.push({
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            }),
+            message: data.message,
+            status: data.status,
+          });
+
+          // ✅ limit logs (performance)
+          if (newLogs.length > 30) {
+            newLogs = newLogs.slice(-30);
+          }
+        }
+
+        return {
+          ...prev,
+          [data.site]: {
+            ...siteData,
+            logs: newLogs,
+            streaming_url: data.streaming_url || siteData.streaming_url,
+            status:
+              data.status === "success" || data.status === "error"
+                ? data.status
+                : siteData.status,
+          },
+        };
+      });
+    };
+
+    eventSource.onerror = () => {
+      console.log("❌ SSE connection closed");
+      eventSource.close();
+      setIsActive(false);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [query]);
+
+  // ✅ Auto-scroll logs
+  useEffect(() => {
+    Object.keys(logsEndRefs.current).forEach((site) => {
+      const el = logsEndRefs.current[site];
+      if (el && el.parentElement) {
+        el.parentElement.scrollTo({
+          top: el.parentElement.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    });
+  }, [tasks]);
+
+  const activeSites = Object.keys(tasks);
+
+  if (!query) return null;
+
+  // ✅ CLEAN LOADING STATE (instead of fake card)
+  if (activeSites.length === 0 && isActive) {
+    return (
+      <section className="w-full mb-16 text-center">
+        <div className="text-gray-400 animate-pulse">
+          🚀 Starting AI agents...
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="w-full mb-16">
-      <h2 className="text-2xl font-bold mb-6">AI Agent Activity</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {activities.map((activity) => (
-          <div 
-            key={activity.id} 
-            className={`rounded-2xl p-4 flex items-center gap-4 relative ${
-              activity.isActive 
-                ? 'bg-white border-glow-purple shadow-glow-purple' 
-                : 'bg-white shadow-sm border border-gray-100'
-            }`}
-          >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              activity.isActive ? 'bg-purple-100 text-purple-600' : 'bg-purple-50 text-purple-500'
-            }`}>
-              {activity.icon}
-            </div>
-            <div className="flex-grow">
-              <div className="text-sm font-medium mb-2">{activity.text}</div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full bg-gradient-purple ${activity.progress} rounded-full`}></div>
+    <section className="w-full mb-16 px-0 md:px-4">
+      {/* Header */}
+      <div className="text-center mb-10">
+        <h2 className="text-white text-2xl font-bold flex items-center justify-center gap-3">
+          <span className="relative flex h-3 w-3">
+            <span
+              className={`${isActive ? "animate-ping" : "hidden"
+                } absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-3 w-3 ${isActive ? "bg-purple-500" : "bg-green-500"
+                }`}
+            />
+          </span>
+          Live Search Agents
+        </h2>
+
+        <p className="text-gray-400 mt-2">
+          AI agents are browsing real estate websites in real-time.
+        </p>
+      </div>
+
+      {/* Cards */}
+      <div
+        className={`grid grid-cols-1 ${activeSites.length > 1 ? "lg:grid-cols-2" : ""
+          } gap-8 max-w-7xl mx-auto`}
+      >
+        {activeSites.map((site) => {
+          const task = tasks[site];
+
+          return (
+            <div
+              key={site}
+              className="flex flex-col rounded-2xl overflow-hidden border border-gray-800 bg-[#0A0D14]"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#131722] border-b border-gray-800">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                </div>
+
+                <div className="ml-4 flex-grow text-xs text-gray-400 truncate">
+                  {site}
+                </div>
+
+                <div
+                  className={`text-xs px-2 py-1 rounded ${task?.status === "success"
+                      ? "bg-green-500/20 text-green-400"
+                      : task?.status === "error"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-purple-500/20 text-purple-400 animate-pulse"
+                    }`}
+                >
+                  {task?.status === "success"
+                    ? "Done"
+                    : task?.status === "error"
+                      ? "Failed"
+                      : "Running"}
+                </div>
+              </div>
+
+              {/* Live Preview */}
+              <div className="relative w-full h-64 bg-black flex items-center justify-center">
+                {task?.status === "success" ? (
+                  <div className="flex flex-col items-center gap-2 text-green-500 font-bold">
+                    <span className="text-2xl">✅</span>
+                    Agent task completed
+                  </div>
+                ) : task?.status === "error" ? (
+                  <div className="flex flex-col items-center gap-2 text-red-500 font-bold">
+                    <span className="text-2xl">❌</span>
+                    Agent encountered an error
+                  </div>
+                ) : task?.streaming_url ? (
+                  <iframe
+                    src={task?.streaming_url}
+                    className="absolute inset-0 w-full h-full"
+                    title="preview"
+                  />
+                ) : (
+                  <div className="text-gray-500 animate-pulse">
+                    Initializing browser...
+                  </div>
+                )}
+              </div>
+
+              {/* Logs */}
+              <div className="p-3 h-48 overflow-y-auto text-xs font-mono bg-[#0b0f16]">
+                {task?.logs?.map((log, idx) => (
+                  <div key={idx} className="flex gap-2 mb-1">
+                    <span className="text-gray-600 w-16">{log.time}</span>
+                    <span className="text-blue-400">▶</span>
+                    <span className="text-gray-300">{log.message}</span>
+                  </div>
+                ))}
+
+                <div
+                  ref={(el) => (logsEndRefs.current[site] = el)}
+                />
               </div>
             </div>
-            {activity.isActive && (
-              <div className="absolute right-4 text-purple-400">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

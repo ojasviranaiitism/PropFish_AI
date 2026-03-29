@@ -1,81 +1,134 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import AgentActivity from './components/AgentActivity';
 import PropertyRecommendations from './components/PropertyRecommendations';
+import BusinessTypesSection from './components/BusinessTypesSection';
+import TestimonialsSection from './components/TestimonialsSection';
 import Footer from './components/Footer';
 
 function App() {
   const [parsedData, setParsedData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(null);
+  const [tinyfishResults, setTinyfishResults] = useState([]);
+  const agentSectionRef = useRef(null);
 
-  const handleSearch = async (query) => {
-    console.log("Searching for:", query);
+  /**
+   * 🔥 Webflow re-init (unchanged)
+   */
+  useEffect(() => {
+    if (window.Webflow && window.Webflow.require) {
+      try {
+        window.Webflow.destroy();
+        window.Webflow.ready();
+        window.Webflow.require('ix2').init();
+      } catch (e) {
+        console.warn("Webflow init warning:", e);
+      }
+    }
+  }, [parsedData, isProcessing]);
+
+  /**
+   * 🔥 HANDLE SEARCH (SSE ONLY — NO POST)
+   */
+  const handleSearch = (query) => {
+    console.log("🔍 Searching for:", query);
+
+    // Reset all results so old sections disappear immediately
     setParsedData(null);
+    setTinyfishResults([]);
+    setIsRefining(false);
     setError(null);
     setIsProcessing(true);
 
-    try {
-      const response = await fetch('http://localhost:5000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
+    // Set query last so AgentActivity mounts / re-triggers after reset
+    setSearchQuery(query);
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to parse query');
-      }
-
-      console.log("Structured JSON extracted from backend:", data.data);
-      setParsedData(data.data);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    // Auto-scroll to agent activity after React re-renders
+    setTimeout(() => {
+      agentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
   };
 
+  /**
+   * 🔥 RECEIVE FINAL RESULTS FROM SSE
+   */
+  useEffect(() => {
+    const handler = (e) => {
+      console.log("📦 Received results:", e.detail);
+      setTinyfishResults(e.detail || []);
+      setIsRefining(false);
+      setIsProcessing(false);
+    };
+    window.addEventListener("tinyfish-results", handler);
+    return () => window.removeEventListener("tinyfish-results", handler);
+  }, []);
+
+  /**
+   * 🏆 REFINING STATE — agents done, LLM picking best match
+   */
+  useEffect(() => {
+    const handler = () => setIsRefining(true);
+    window.addEventListener("tinyfish-refining", handler);
+    return () => window.removeEventListener("tinyfish-refining", handler);
+  }, []);
+
   return (
-    <div className="text-gray-900 antialiased min-h-screen flex flex-col">
+    <div className="antialiased min-h-screen flex flex-col bg-[#0d0d0d] text-white">
       <Header />
-      
-      <main className="flex-grow w-full max-w-7xl mx-auto px-8 py-12 flex flex-col items-center">
-        <Hero onSearch={handleSearch} />
-        
-        {/* Rendering parsed AI query output */}
-        {isProcessing && (
-          <div className="w-full max-w-4xl mb-8 p-4 bg-purple-50 text-purple-700 animate-pulse rounded-lg text-center font-medium">
-            Claude is analyzing your request...
-          </div>
-        )}
 
-        {error && (
-          <div className="w-full max-w-4xl mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            <span className="font-bold">Error:</span> {error}
-          </div>
-        )}
-        
-        {parsedData && (
-          <div className="w-full max-w-4xl mb-16 p-6 bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden relative">
-             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-purple"></div>
-             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-               <span className="text-purple-600">AI Extracted Parameters</span>
-               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-             </h3>
-             <pre className="bg-gray-50 p-4 rounded-xl text-sm overflow-auto text-gray-800 border border-gray-100">
-               {JSON.stringify(parsedData, null, 2)}
-             </pre>
-          </div>
-        )}
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-8 py-12 flex flex-col items-center">
 
-        <AgentActivity />
-        <PropertyRecommendations />
+        <Hero onSearch={handleSearch}>
+
+          {/* 🔥 LOADING */}
+          {isProcessing && (
+            <div className="w-full max-w-4xl mx-auto mb-8 p-4 bg-purple-900/30 text-purple-300 animate-pulse rounded-lg text-center font-medium border border-purple-500/20">
+              PropFish AI agents are searching across websites...
+            </div>
+          )}
+
+          {/* 🔥 ERROR */}
+          {error && (
+            <div className="w-full max-w-4xl mx-auto mb-8 p-4 bg-red-900/30 border border-red-500/30 text-red-400 rounded-lg">
+              <span className="font-bold">Error:</span> {error}
+            </div>
+          )}
+
+          {/* 🔥 LIVE AGENT */}
+          <div ref={agentSectionRef} style={{ scrollMarginTop: '80px' }}>
+            <AgentActivity query={searchQuery} />
+          </div>
+
+          {/* 🏆 REFINING BANNER — shown after agents finish, before results appear */}
+          {isRefining && tinyfishResults.length === 0 && (
+            <div className="w-full max-w-4xl mx-auto mb-8 p-4 bg-purple-900/30 text-purple-300 animate-pulse rounded-lg text-center font-medium border border-purple-500/20 flex items-center justify-center gap-3">
+              <svg className="animate-spin h-4 w-4 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              Refining the best matches using AI insights...
+            </div>
+          )}
+
+          {/* 🔥 RESULTS */}
+          {tinyfishResults.length > 0 && (
+            <PropertyRecommendations results={tinyfishResults} />
+          )}
+
+        </Hero>
+
       </main>
-      
+
+      {/* Additional sections */}
+      <div className="w-full">
+        <BusinessTypesSection />
+        <TestimonialsSection />
+      </div>
+
       <Footer />
     </div>
   );

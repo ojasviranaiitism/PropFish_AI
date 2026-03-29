@@ -1,28 +1,60 @@
 @import "tailwindcss";
+@import "./assets/css/webflow.css";
 
 body {
   font-family: 'Inter', sans-serif;
   /* Subtle noise texture approximation */
-  background-color: #f9f8f6;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  background-color: #0d0d0d;
+  /* Matching a dark theme default */
 }
 
 @layer utilities {
   .bg-gradient-purple {
     background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
   }
+
   .text-gradient-purple {
     background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
   .shadow-glow-purple {
     box-shadow: 0 0 20px 5px rgba(168, 85, 247, 0.2);
   }
+
   .border-glow-purple {
     border: 2px solid transparent;
     background-clip: padding-box, border-box;
     background-origin: padding-box, border-box;
     background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+  }
+
+  /* Marquee animation */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  .mask-image-gradient {
+    mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  }
+
+  .header-section,
+  .header-nav,
+  .w-nav,
+  .w-container {
+    background: transparent !important;
   }
 }

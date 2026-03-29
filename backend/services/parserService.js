@@ -3,55 +3,70 @@ import dotenv from "dotenv";
 dotenv.config();
 
 /**
- * Parses a natural language search query into structured JSON using OpenRouter.
+ * 🔥 Infer currency from country
  */
-//! find me a 2bhk room to rent under 12000 rupees per month in Greater Noida Sector Beta 2 near Schools
+function inferCurrency(country) {
+  const map = {
+    India: "₹",
+    USA: "$",
+    "United States": "$",
+    UK: "£",
+    "United Kingdom": "£",
+    UAE: "AED",
+    "United Arab Emirates": "AED",
+    Russia: "₽"
+  };
+
+  return map[country] || "₹";
+}
+
+/**
+ * 🔥 Parses natural language → structured JSON
+ */
 export async function parseSearchQuery(query) {
   const prompt = `
-You are an expert real estate data extraction API.
-Return ONLY valid JSON. No markdown. No explanation.
+You are a real estate data extraction API.
+
+Return valid JSON only.
 
 Schema:
 {
-  "city": string,
+  "location": string,
   "state": string,
   "country": string,
+  "transaction_type": "buy" | "rent",
+  "currency": string,
   "max_price": number,
   "bedrooms": number,
+  "bathrooms": number,
   "property_type": string,
   "preferences": string[],
   "recommended_websites": string[]
 }
 
 Rules:
+- Extract full location (locality + city) into ONE field "location"
+- Example: "Gamma 2, Greater Noida"
+- Do NOT split locality and city
+- Do NOT put locality in preferences
+
+- Extract transaction_type (rent/buy). Default: buy
 - Convert 50L → 5000000, 1Cr → 10000000
-- If a field is missing, omit it
-- It should also find properties that can be rented or bought based on query
-- Always infer "country" from city/state if not provided
-  (e.g., Bangalore → India, New York → USA)
+- Infer country if missing
 
-- ALWAYS return at least ONE valid real estate website in "recommended_websites"
-- DO NOT return generic search engines like Google
+- Always include at least 2 valid real estate websites
 
-Website selection rules:
-
-For India:
+India:
 ["https://www.99acres.com", "https://www.magicbricks.com", "https://housing.com"]
 
-For USA:
-["https://www.zillow.com", "https://www.realtor.com", "https://www.redfin.com"]
+USA:
+["https://www.zillow.com", "https://www.realtor.com"]
 
-For UK:
+UK:
 ["https://www.rightmove.co.uk", "https://www.zoopla.co.uk"]
 
-For UAE:
+UAE:
 ["https://www.propertyfinder.ae", "https://www.bayut.com"]
-
-For unknown countries:
-- Choose a well-known local real estate platform for that country
-- If unsure, still return a real estate website (NOT Google)
-
-- Ensure "recommended_websites" ALWAYS contains at least two valid URL
 
 Query: "${query}"
 `;
@@ -61,16 +76,14 @@ Query: "${query}"
       "https://openrouter.ai/api/v1/chat/completions",
       {
         model: "nvidia/nemotron-3-super-120b-a12b:free",
-        messages: [
-          { role: "user", content: prompt }
-        ],
+        messages: [{ role: "user", content: prompt }],
         temperature: 0
       },
       {
         headers: {
           "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:3000", // optional
+          "HTTP-Referer": "http://localhost:3000",
           "X-Title": "PropFishAI"
         }
       }
@@ -78,13 +91,35 @@ Query: "${query}"
 
     const text = response.data.choices[0].message.content.trim();
 
-    // Extract JSON safely
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("No JSON found");
+    // 🔥 Safe JSON parsing
+    let parsedData;
+    try {
+      parsedData = JSON.parse(text);
+    } catch {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found");
+      parsedData = JSON.parse(match[0]);
     }
 
-    return JSON.parse(jsonMatch[0]);
+    // 🔥 Fix missing transaction type
+    if (!parsedData.transaction_type) {
+      parsedData.transaction_type = "buy";
+    }
+
+    // 🔥 Fix currency
+    if (!parsedData.currency) {
+      parsedData.currency = inferCurrency(parsedData.country);
+    }
+
+    // 🔥 Fix websites fallback
+    if (!parsedData.recommended_websites || parsedData.recommended_websites.length === 0) {
+      parsedData.recommended_websites = [
+        "https://www.99acres.com",
+        "https://www.magicbricks.com"
+      ];
+    }
+
+    return parsedData;
 
   } catch (error) {
     console.error("OpenRouter error:", error.response?.data || error.message);

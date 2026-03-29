@@ -88,7 +88,7 @@ Try these example queries in the app:
 | Technology | Role |
 |---|---|
 | **HTML5** | Semantic page structure and entry point |
-| **CSS3** | Custom styling, animations, and responsive layout (68.6% of codebase) |
+| **CSS3** | Custom styling, animations, and responsive layout |
 | **Vanilla JavaScript** | DOM manipulation, API calls, and chat UI logic |
 
 > The frontend is intentionally framework-free — fast initial load, zero build step, and easy to extend.
@@ -97,6 +97,7 @@ Try these example queries in the app:
 | Technology | Role |
 |---|---|
 | **Node.js / Python** | Backend runtime (see `backend/` folder) |
+| **TinyFish API** | Real-time property listings, search, and filters via the TinyFish property data API |
 | **LLM / AI API** | Natural language understanding and property evaluation |
 | **REST API** | JSON endpoints consumed by the frontend |
 

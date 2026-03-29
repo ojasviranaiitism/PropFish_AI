@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 
+const apiUrl= import.meta.env.VITE_SERVER_URL
+
 export default function AgentActivity({ query }) {
   const [tasks, setTasks] = useState({});
   const [isActive, setIsActive] = useState(false);
@@ -14,7 +16,7 @@ export default function AgentActivity({ query }) {
     logsEndRefs.current = {};
 
     const eventSource = new EventSource(
-      `http://localhost:5000/api/search-stream?q=${encodeURIComponent(query)}`
+      `${apiUrl}/api/search-stream?q=${encodeURIComponent(query)}`
     );
 
     eventSource.onmessage = (event) => {

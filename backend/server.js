@@ -8,18 +8,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-import cors from "cors";
-
+// ✅ CORS (global)
 app.use(cors({
   origin: "https://prop-fish-ai-client.vercel.app",
+  methods: ["GET", "POST"],
+  credentials: true
 }));
+
 app.use(express.json());
 
 // Routes
 app.use('/api', apiRoutes);
 
-// Health check route
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running correctly.' });
 });

@@ -65,14 +65,14 @@ PropFish is a conversational real estate assistant. Type what you're looking for
 ## 📸 Screenshots
 
 ### 🏠 Home / Landing Page Section
-![PropFish AI - Home](https://raw.githubusercontent.com/ojasviranaiitism/PropFish_AI/images/img1.png)
+![PropFish AI - Home](./images/img1.png)
 
 ### 🔍 Live Agent Activity Section
-![PropFish AI - Search](https://raw.githubusercontent.com/ojasviranaiitism/PropFish_AI/images/img2.png)
+![PropFish AI - Search](./images/img2.png)
 
 ### 🤖 Property Recommendations Section
-![PropFish AI - Results](https://raw.githubusercontent.com/ojasviranaiitism/PropFish_AI/images/img3.png)
-![PropFish AI - Compare](https://raw.githubusercontent.com/ojasviranaiitism/PropFish_AI/images/img4.png)
+![PropFish AI - Results](./images/img3.png)
+![PropFish AI - Compare](./images/img4.png)
 
 ---
 

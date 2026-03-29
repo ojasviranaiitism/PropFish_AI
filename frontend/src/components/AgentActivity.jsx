@@ -102,9 +102,7 @@ export default function AgentActivity({ query }) {
     };
 
     eventSource.onerror = () => {
-      console.log("❌ SSE connection closed");
-      eventSource.close();
-      setIsActive(false);
+      console.log("⚠️ SSE reconnecting...");
     };
 
     return () => {
